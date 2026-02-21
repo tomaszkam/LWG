@@ -5,8 +5,9 @@
 #include "html_utils.h"
 
 #include <algorithm>
+#include <format>
 #include <istream>
-#include <sstream>
+#include <iterator>
 
 namespace {
 
@@ -33,18 +34,17 @@ void replace_all_irefs(std::span<const lwg::issue> issues, std::string & s) {
 
       ++k;
 
-      std::istringstream temp{s.substr(k, l-k)};
       int num;
-      temp >> num;
-      if (temp.fail()) {
-         throw std::runtime_error{"bad number in iref"};
+
+      try {
+         num = lwg::stoi(s.substr(k, l-k));
+      } catch (const std::exception&) {
+         throw std::runtime_error{"bad number in iref: " + s.substr(k, l-k) };
       }
 
       auto n = std::ranges::lower_bound(issues, num, {}, &lwg::issue::num);
       if (n == issues.end() || n->num != num) {
-         std::ostringstream er;
-         er << "couldn't find number " << num << " in iref";
-         throw std::runtime_error{er.str()};
+         throw std::runtime_error{std::format("couldn't find issue number in <iref>: {}", num)};
       }
 
       std::string r{make_html_anchor(*n)};
@@ -63,18 +63,8 @@ auto lwg::make_html_anchor(lwg::issue const & iss) -> std::string {
    // Attribute text is delimited with quotes so replace them with "&quot;".
    title = lwg::replace_reserved_char(std::move(title), '"', "&quot;");
 
-   std::string result{"<a href=\""};
-   result += filename_for_status(iss.stat);
-   result += '#';
-   result += num;
-   result += "\" title=\"";
-   result += title;
-   result += " (Status: ";
-   result += iss.stat;
-   result += ")\">";
-   result += num;
-   result += "</a>";
-   return result;
+   return std::format("<a href=\"{0}#{1}\" title=\"{2} (Status: {3})\">{1}</a>",
+       filename_for_status(iss.stat), num, title, iss.stat);
 }
 
 namespace lwg
@@ -86,7 +76,7 @@ mailing_info::mailing_info(std::istream & stream)
    {
 }
 
-auto mailing_info::get_doc_number(std::string doc) const -> std::string {
+auto mailing_info::get_doc_number(std::string doc) const -> std::string_view {
     if (doc == "active") {
         doc = "active_docno";
     }
@@ -97,13 +87,13 @@ auto mailing_info::get_doc_number(std::string doc) const -> std::string {
         doc = "closed_docno";
     }
     else {
-        throw std::runtime_error{"unknown argument to get_doc_number: " + doc};
+        throw std::runtime_error{"unknown argument to get_doc_number: " + std::string{doc}};
     }
 
     return get_attribute(doc);
 }
 
-auto mailing_info::get_intro(std::string doc) const -> std::string {
+auto mailing_info::get_intro(std::string_view doc) const -> std::string_view {
     if (doc == "active") {
         doc = "<intro list=\"Active\">";
     }
@@ -114,7 +104,7 @@ auto mailing_info::get_intro(std::string doc) const -> std::string {
         doc = "<intro list=\"Closed\">";
     }
     else {
-        throw std::runtime_error{"unknown argument to intro: " + doc};
+        throw std::runtime_error{"unknown argument to intro: " + std::string{doc}};
     }
 
     auto i = m_data.find(doc);
@@ -126,29 +116,30 @@ auto mailing_info::get_intro(std::string doc) const -> std::string {
     if (j == std::string::npos) {
         throw std::runtime_error{"Unable to parse intro in lwg-issues.xml"};
     }
-    return m_data.substr(i, j-i);
+    return std::string_view{m_data}.substr(i, j-i);
 }
 
 
 auto mailing_info::get_maintainer() const -> std::string {
-   std::string r = get_attribute("maintainer");
+   std::string_view r = get_attribute("maintainer");
    auto m = r.find("&lt;");
-   if (m == std::string::npos) {
+   if (m == r.npos) {
       throw std::runtime_error{"Unable to parse maintainer email address in lwg-issues.xml"};
    }
    m += sizeof("&lt;") - 1;
+   std::string_view pre = r.substr(0, m);
    auto me = r.find("&gt;", m);
-   if (me == std::string::npos) {
+   if (me == r.npos) {
       throw std::runtime_error{"Unable to parse maintainer email address in lwg-issues.xml"};
    }
-   std::string email = r.substr(m, me-m);
-   // &lt;                                    lwgchair@gmail.com    &gt;
-   // &lt;<a href="mailto:lwgchair@gmail.com">lwgchair@gmail.com</a>&gt;
-   r.replace(m, me-m, "<a href=\"mailto:" + email + "\">" + email + "</a>");
-   return r;
+   std::string_view post = r.substr(me);
+   std::string_view email = r.substr(m, me-m);
+   // Name &lt;                                    lwgchair@gmail.com    &gt;
+   // Name &lt;<a href="mailto:lwgchair@gmail.com">lwgchair@gmail.com</a>&gt;
+   return std::format("{0}<a href=\"mailto:{1}\">{1}</a>{2}", pre, email, post);
 }
 
-auto mailing_info::get_revision() const -> std::string {
+auto mailing_info::get_revision() const -> std::string_view {
    return get_attribute("revision");
 }
 
@@ -164,33 +155,25 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
    if (j == std::string::npos) {
       throw std::runtime_error{"Unable to find </revision_history> in lwg-issues.xml"};
    }
-   auto s = m_data.substr(i, j-i);
+   auto s = std::string_view{m_data}.substr(i, j-i);
    j = 0;
 
-   // building a potentially large string, would a stringstream be a better solution?
-   // Probably not - string will not be *that* big, and stringstream pays the cost of locales
-   std::string r = "<ul>\n";
-
-   r += "<li>";
-   r += get_revision() + ": " + get_attribute("date") + " " + get_attribute("title");   // We should date and *timestamp* this reference, as we expect to generate several documents per day
-   r += diff_report;
-   r += "</li>\n";
+   // We should date and *timestamp* this reference, as we expect to generate several documents per day
+   std::string r = std::format("<ul>\n<li>{}: {} {}{}</li>\n",
+       get_revision(), get_date(), get_title(), diff_report);
 
    while (true) {
       i = s.find("<revision tag=\"", j);
-      if (i == std::string::npos) {
+      if (i == s.npos) {
          break;
       }
       i += sizeof("<revision tag=\"") - 1;
       j = s.find('"', i);
-      std::string const rv = s.substr(i, j-i);
+      std::string_view rv = s.substr(i, j-i);
       i = j+2;
       j = s.find("</revision>", i);
 
-      r += "<li>";
-      r += rv + ": ";
-      r += s.substr(i, j-i);
-      r += "</li>\n";
+      r += std::format("<li>{}: {}</li>\n", rv, s.substr(i, j-i));
    }
    r += "</ul>\n";
 
@@ -200,7 +183,7 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
 }
 
 
-auto mailing_info::get_statuses() const -> std::string {
+auto mailing_info::get_statuses() const -> std::string_view {
    auto i = m_data.find("<statuses>");
    if (i == std::string::npos) {
       throw std::runtime_error{"Unable to find statuses in lwg-issues.xml"};
@@ -211,29 +194,31 @@ auto mailing_info::get_statuses() const -> std::string {
    if (j == std::string::npos) {
       throw std::runtime_error{"Unable to parse statuses in lwg-issues.xml"};
    }
-   return m_data.substr(i, j-i);
+   return std::string_view{m_data}.substr(i, j-i);
 }
 
-auto mailing_info::get_date() const -> std::string {
+auto mailing_info::get_date() const -> std::string_view {
    return get_attribute("date");
 }
 
-auto mailing_info::get_title() const -> std::string {
+auto mailing_info::get_title() const -> std::string_view {
    return get_attribute("title");
 }
 
-auto mailing_info::get_attribute(std::string const & attribute_name) const -> std::string {
-    std::string search_string{attribute_name + "=\""};
+// TODO: this should be a generic routine for finding an attribute, usable in other files.
+auto mailing_info::get_attribute(std::string_view attribute_name) const -> std::string_view {
+    std::string attr{attribute_name};
+    std::string search_string{" " + attr + "=\""};
     auto i = m_data.find(search_string);
     if (i == std::string::npos) {
-        throw std::runtime_error{"Unable to find " + attribute_name + " in lwg-issues.xml"};
+        throw std::runtime_error{"Unable to find " + attr + " in lwg-issues.xml"};
     }
     i += search_string.size();
-    auto j = m_data.find('\"', i);
+    auto j = m_data.find('"', i);
     if (j == std::string::npos) {
-        throw std::runtime_error{"Unable to parse " + attribute_name + " in lwg-issues.xml"};
+        throw std::runtime_error{"Unable to parse " + attr + " in lwg-issues.xml"};
     }
-    return m_data.substr(i, j-i);
+    return std::string_view{m_data}.substr(i, j-i);
 }
 
 } // close namespace lwg
