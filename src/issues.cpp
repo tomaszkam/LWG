@@ -161,7 +161,7 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
       throw bad_issue_file{filename, "Unable to find issue number"};
    }
    k += match.size();
-   auto l = tx.find('\"', k);
+   auto l = tx.find('"', k);
    auto num = tx.substr(k, l-k);
    if (!filename.ends_with(std::format("issue{:0>4}.xml", num)))
      std::cerr << "warning: issue number " << num << " in " << filename << " does not match issue number\n";
@@ -174,7 +174,7 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
       throw bad_issue_file{filename, "Unable to find issue status"};
    }
    k += match.size();
-   l = tx.find('\"', k);
+   l = tx.find('"', k);
    is.stat = tx.substr(k, l-k);
 
    // Get issue title
@@ -206,11 +206,11 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    k += match.size();
    l = tx.find("</section>", k);
    while (k < l) {
-      k = tx.find('\"', k);
+      k = tx.find('"', k);
       if (k >= l) {
           break;
       }
-      auto k2 = tx.find('\"', k+1);
+      auto k2 = tx.find('"', k+1);
       if (k2 >= l) {
          throw bad_issue_file{filename, "Unable to find issue section"};
       }

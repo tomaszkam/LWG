@@ -22,11 +22,11 @@ void replace_all_irefs(std::span<const lwg::issue> issues, std::string & s) {
          throw std::runtime_error{"missing '>' after iref"};
       }
 
-      auto k = s.find('\"', i+5);
+      auto k = s.find('"', i+5);
       if (k >= j) {
          throw std::runtime_error{"missing '\"' in iref"};
       }
-      auto l = s.find('\"', k+1);
+      auto l = s.find('"', k+1);
       if (l >= j) {
          throw std::runtime_error{"missing '\"' in iref"};
       }
@@ -182,7 +182,7 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
          break;
       }
       i += sizeof("<revision tag=\"") - 1;
-      j = s.find('\"', i);
+      j = s.find('"', i);
       std::string const rv = s.substr(i, j-i);
       i = j+2;
       j = s.find("</revision>", i);

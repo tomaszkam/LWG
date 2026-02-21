@@ -261,10 +261,10 @@ void format_issue_as_html(lwg::issue & is,
 
    // Return the content of a quoted attribute, e.g. ref="[stable.name]"
    auto get_attribute_value = [&fail](std::string elem_name, std::string_view data, const Context& ctx) {
-      auto k = data.find('\"');
+      auto k = data.find('"');
       if (k != data.npos) {
          ++k;
-         auto l = data.find('\"', k);
+         auto l = data.find('"', k);
          if (l != data.npos) {
             return data.substr(k, l - k);
          }
