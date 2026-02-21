@@ -8,6 +8,7 @@
 #include <format>
 #include <istream>
 #include <iterator>
+#include <cstring>
 
 namespace {
 
@@ -120,13 +121,21 @@ auto mailing_info::get_intro(std::string_view doc) const -> std::string_view {
 }
 
 
+// Find the maintainer attribute and return its value with the email address
+// turned into an HTML <a href="mailto:..."> link.
 auto mailing_info::get_maintainer() const -> std::string {
-   std::string_view r = get_attribute("maintainer");
+   std::string_view r;
+   try {
+      r = lwg::get_attribute("maintainer", m_data);
+   } catch (const std::runtime_error&) {
+      throw std::runtime_error{"Unable to find <maintainer> in lwg-issues.xml"};
+   }
+
    auto m = r.find("&lt;");
    if (m == r.npos) {
       throw std::runtime_error{"Unable to parse maintainer email address in lwg-issues.xml"};
    }
-   m += sizeof("&lt;") - 1;
+   m += std::strlen("&lt;");
    std::string_view pre = r.substr(0, m);
    auto me = r.find("&gt;", m);
    if (me == r.npos) {
@@ -145,35 +154,24 @@ auto mailing_info::get_revision() const -> std::string_view {
 
 
 auto mailing_info::get_revisions(std::span<const issue> issues, std::string const & diff_report) const -> std::string {
-   auto i = m_data.find("<revision_history>");
-   if (i == std::string::npos) {
+
+   std::string_view revs;
+   try {
+      revs = lwg::get_element_contents("revision_history", m_data);
+   } catch (const std::runtime_error&) {
       throw std::runtime_error{"Unable to find <revision_history> in lwg-issues.xml"};
    }
-   i += sizeof("<revision_history>") - 1;
-
-   auto j = m_data.find("</revision_history>", i);
-   if (j == std::string::npos) {
-      throw std::runtime_error{"Unable to find </revision_history> in lwg-issues.xml"};
-   }
-   auto s = std::string_view{m_data}.substr(i, j-i);
-   j = 0;
 
    // We should date and *timestamp* this reference, as we expect to generate several documents per day
    std::string r = std::format("<ul>\n<li>{}: {} {}{}</li>\n",
        get_revision(), get_date(), get_title(), diff_report);
 
-   while (true) {
-      i = s.find("<revision tag=\"", j);
-      if (i == s.npos) {
-         break;
-      }
-      i += sizeof("<revision tag=\"") - 1;
-      j = s.find('"', i);
-      std::string_view rv = s.substr(i, j-i);
-      i = j+2;
-      j = s.find("</revision>", i);
-
-      r += std::format("<li>{}: {}</li>\n", rv, s.substr(i, j-i));
+   while (revs.find("<revision tag=") != revs.npos) {
+      auto rev = lwg::get_element("revision", revs);
+      auto rv = lwg::get_attribute_of("tag", "revision", rev);
+      auto s = lwg::get_element_contents("revision", rev);
+      r += std::format("<li>{}: {}</li>\n", rv, s);
+      revs.remove_prefix(rev.size());
    }
    r += "</ul>\n";
 
@@ -184,17 +182,11 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
 
 
 auto mailing_info::get_statuses() const -> std::string_view {
-   auto i = m_data.find("<statuses>");
-   if (i == std::string::npos) {
+   try {
+      return lwg::get_element_contents("statuses", m_data);
+   } catch (const std::runtime_error&) {
       throw std::runtime_error{"Unable to find statuses in lwg-issues.xml"};
    }
-   i += sizeof("<statuses>") - 1;
-
-   auto j = m_data.find("</statuses>", i);
-   if (j == std::string::npos) {
-      throw std::runtime_error{"Unable to parse statuses in lwg-issues.xml"};
-   }
-   return std::string_view{m_data}.substr(i, j-i);
 }
 
 auto mailing_info::get_date() const -> std::string_view {
@@ -205,20 +197,12 @@ auto mailing_info::get_title() const -> std::string_view {
    return get_attribute("title");
 }
 
-// TODO: this should be a generic routine for finding an attribute, usable in other files.
 auto mailing_info::get_attribute(std::string_view attribute_name) const -> std::string_view {
-    std::string attr{attribute_name};
-    std::string search_string{" " + attr + "=\""};
-    auto i = m_data.find(search_string);
-    if (i == std::string::npos) {
-        throw std::runtime_error{"Unable to find " + attr + " in lwg-issues.xml"};
-    }
-    i += search_string.size();
-    auto j = m_data.find('"', i);
-    if (j == std::string::npos) {
-        throw std::runtime_error{"Unable to parse " + attr + " in lwg-issues.xml"};
-    }
-    return std::string_view{m_data}.substr(i, j-i);
+   try {
+      return lwg::get_attribute(attribute_name, m_data);
+   } catch (const std::runtime_error&) {
+      throw std::runtime_error{std::format("Unable to find {} in lwg-issues.xml", attribute_name)};
+   }
 }
 
 } // close namespace lwg

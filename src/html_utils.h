@@ -19,6 +19,24 @@ inline std::string strip_xml_elements(std::string xml) {
    return xml;
 }
 
+// N.B. the get_element* and get_attribute* functions expect input
+// that conforms to the XML specs, not the more relaxed HTML5 spec.
+// For example, element names are case-sensitive, attributes must be quoted,
+// and end tags are not optional. This matches the LWG issue format.
+
+// Find "<elem>...</elem>" in xml and return as string view.
+std::string_view get_element(std::string_view elem, std::string_view xml);
+
+// As above, but only return the "..." part.
+std::string_view get_element_contents(std::string_view elem, std::string_view xml);
+
+// Find attr="..." in xml and return the attribute's value
+std::string_view get_attribute(std::string_view attr, std::string_view xml);
+
+// Find <elem attr="..."> in xml and return the attribute's value
+std::string_view get_attribute_of(std::string_view attr, std::string_view elem,
+                                  std::string_view xml);
+
 struct issue;
 
 // Create an <a> element linking to an issue

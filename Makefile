@@ -36,7 +36,7 @@ pgms: $(PGMS)
 
 -include src/*.d
 
-bin/lists: src/issues.o src/status.o src/sections.o src/mailing_info.o src/report_generator.o src/lists.o src/metadata.o
+bin/lists: src/issues.o src/status.o src/sections.o src/mailing_info.o src/report_generator.o src/lists.o src/metadata.o src/html_utils.o
 
 bin/section_data: src/section_data.o
 
@@ -44,11 +44,18 @@ bin/list_issues: src/issues.o src/status.o src/sections.o src/list_issues.o src/
 
 bin/set_status: src/set_status.o src/status.o
 
+bin/self_test_%: src/%.cpp
+	$(CXX) $(CPPFLAGS) -DSELF_TEST $(CXXFLAGS) -O0 $(LDFLAGS) $< -o $@
+
+check: bin/self_test_html_utils
+	./$<
+.PHONY: check
+
 $(PGMS):
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 clean:
-	rm -f $(PGMS) src/*.o src/*.d
+	rm -f $(PGMS) src/*.o src/*.d bin/self_test_*
 
 # Remove everything.
 # Caution: Regenerating meta-data/dates will take about 30 minutes.
