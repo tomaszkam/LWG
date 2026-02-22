@@ -5,6 +5,7 @@
 #include "issues.h"
 #include "metadata.h"
 #include "status.h"
+#include "html_utils.h"
 
 #include <algorithm>
 #include <cassert>
@@ -155,37 +156,16 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    issue is;
 
    // Get issue number
-   std::string_view match = "<issue num=\"";
-   auto k = tx.find(match);
-   if (k == std::string::npos) {
-      throw bad_issue_file{filename, "Unable to find issue number"};
-   }
-   k += match.size();
-   auto l = tx.find('"', k);
-   auto num = tx.substr(k, l-k);
+   std::string_view num = lwg::get_attribute_of("num", "issue", tx);
    if (!filename.ends_with(std::format("issue{:0>4}.xml", num)))
      std::cerr << "warning: issue number " << num << " in " << filename << " does not match issue number\n";
-   is.num = lwg::stoi(num);
+   is.num = lwg::stoi(std::string(num));
 
    // Get issue status
-   match = "status=\"";
-   k = tx.find(match, l);
-   if (k == std::string::npos) {
-      throw bad_issue_file{filename, "Unable to find issue status"};
-   }
-   k += match.size();
-   l = tx.find('"', k);
-   is.stat = tx.substr(k, l-k);
+   is.stat = lwg::get_attribute_of("status", "issue", tx);
 
    // Get issue title
-   match = "<title>";
-   k = tx.find(match, l);
-   if (k == std::string::npos) {
-      throw bad_issue_file{filename, "Unable to find issue title"};
-   }
-   k += match.size();
-   l = tx.find("</title>", k);
-   is.title = tx.substr(k, l-k);
+   is.title = lwg::get_element_contents("title", tx);
 
    // Extract doc_prefix from title
    if (is.title[0] == '['
@@ -197,9 +177,11 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
 //    std::cout << is.doc_prefix << '\n';
    }
 
+   std::string::size_type l = 0;
+
    // Get issue sections
-   match = "<section>";
-   k = tx.find(match, l);
+   std::string_view match = "<section>";
+   auto k = tx.find(match, l);
    if (k == std::string::npos) {
       throw bad_issue_file{filename, "Unable to find issue section"};
    }
@@ -236,26 +218,17 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    }
 
    // Get submitter
-   match = "<submitter>";
-   k = tx.find(match, l);
-   if (k == std::string::npos) {
-      throw bad_issue_file{filename, "Unable to find issue submitter"};
-   }
-   k += match.size();
-   l = tx.find("</submitter>", k);
-   is.submitter = tx.substr(k, l-k);
+   is.submitter = lwg::get_element_contents("submitter", tx);
 
    // Get date
-   match = "<date>";
-   k = tx.find(match, l);
-   if (k == std::string::npos) {
-      throw bad_issue_file{filename, "Unable to find issue date"};
-   }
-   k += match.size();
-   l = tx.find("</date>", k);
+   auto datestr = lwg::get_element_contents("date", tx);
 
    try {
-      std::istringstream temp{tx.substr(k, l-k)};
+#ifdef __cpp_lib_sstream_from_string_view
+      std::istringstream temp{datestr};
+#else
+      std::istringstream temp{std::string{datestr}};
+#endif
       is.date = parse_date(temp);
    }
    catch(std::exception const & ex) {
@@ -286,15 +259,8 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
 
    // Find out if issue has a proposed resolution
    if (is_active(is.stat)  or  "Pending WP" == is.stat) {
-     match = "<resolution>";
-      auto k2 = tx.find(match, 0);
-      if (k2 == std::string::npos) {
-         is.has_resolution = false;
-      }
-      else {
-         k2 += match.size();
-         auto l2 = tx.find("</resolution>", k2);
-         auto resolution = std::string_view(tx).substr(k2, l2 - k2);
+      try {
+         auto resolution = lwg::get_element_contents("resolution", tx);
          if (resolution.length() < 15) {
             // Filter small amounts of whitespace between tags, with no actual resolution
             resolution = {};
@@ -307,6 +273,8 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
          // only the issues approved at a meeting.
          // We don't currently do this.
          // is.resolution = resolution;
+      } catch (const std::runtime_error&) {
+         is.has_resolution = false;
       }
    }
    else {

@@ -40,7 +40,7 @@ bin/lists: src/issues.o src/status.o src/sections.o src/mailing_info.o src/repor
 
 bin/section_data: src/section_data.o
 
-bin/list_issues: src/issues.o src/status.o src/sections.o src/list_issues.o src/metadata.o
+bin/list_issues: src/issues.o src/status.o src/sections.o src/list_issues.o src/metadata.o src/html_utils.o
 
 bin/set_status: src/set_status.o src/status.o
 
