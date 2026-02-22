@@ -282,7 +282,7 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    if (k == std::string::npos) {
       throw bad_issue_file{filename, "Unable to find issue discussion"};
    }
-   tx.erase(0, k);
+   tx.replace(0, k, "<issue>");
 
    // Find out if issue has a proposed resolution
    if (is_active(is.stat)  or  "Pending WP" == is.stat) {

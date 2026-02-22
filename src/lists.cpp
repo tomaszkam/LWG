@@ -206,6 +206,7 @@ namespace
 {
    std::map<std::string_view, std::pair<std::string_view, std::string_view>, std::less<>> substitutions {
       { "discussion", {"<p><b>Discussion:</b></p>", ""} },
+         { "issue", {} },
          { "resolution", {} },
          { "rationale", {"<p><b>Rationale:</b></p>", ""} },
          { "duplicate", {} },
@@ -340,7 +341,7 @@ void format_issue_as_html(lwg::issue & is,
 
          if (tag[0] == '/') { // closing tag
              tag.erase(tag.begin());
-             if (tag == "issue"  or  tag == "revision") {
+             if (tag == "revision") {
                 s.erase(i, j-i + 1);
                 --i;
                 break;;
