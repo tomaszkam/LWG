@@ -294,13 +294,19 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
       else {
          k2 += match.size();
          auto l2 = tx.find("</resolution>", k2);
-         is.resolution = tx.substr(k2, l2 - k2);
-         if (is.resolution.length() < 15) {
+         auto resolution = std::string_view(tx).substr(k2, l2 - k2);
+         if (resolution.length() < 15) {
             // Filter small amounts of whitespace between tags, with no actual resolution
-            is.resolution.clear();
+            resolution = {};
          }
-//         is.has_resolution = l2 - k2 > 15;
-         is.has_resolution = !is.resolution.empty();
+         is.has_resolution = !resolution.empty();
+
+         // The is.text string already contains the <resolution> element,
+         // but is.resolution stores another copy of it.
+         // That was used to prepare a new report for the editor containing
+         // only the issues approved at a meeting.
+         // We don't currently do this.
+         // is.resolution = resolution;
       }
    }
    else {
