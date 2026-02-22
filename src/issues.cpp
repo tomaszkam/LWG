@@ -165,7 +165,7 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    is.stat = lwg::get_attribute_of("status", "issue", tx);
 
    // Get issue title
-   is.title = lwg::get_element_contents("title", tx);
+   is.title = lwg::get_element_content("title", tx);
 
    // Extract doc_prefix from title
    if (is.title[0] == '['
@@ -218,10 +218,10 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    }
 
    // Get submitter
-   is.submitter = lwg::get_element_contents("submitter", tx);
+   is.submitter = lwg::get_element_content("submitter", tx);
 
    // Get date
-   auto datestr = lwg::get_element_contents("date", tx);
+   auto datestr = lwg::get_element_content("date", tx);
 
    try {
 #ifdef __cpp_lib_sstream_from_string_view
@@ -260,7 +260,7 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    // Find out if issue has a proposed resolution
    if (is_active(is.stat)  or  "Pending WP" == is.stat) {
       try {
-         auto resolution = lwg::get_element_contents("resolution", tx);
+         auto resolution = lwg::get_element_content("resolution", tx);
          if (resolution.length() < 15) {
             // Filter small amounts of whitespace between tags, with no actual resolution
             resolution = {};

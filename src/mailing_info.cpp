@@ -157,7 +157,7 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
 
    std::string_view revs;
    try {
-      revs = lwg::get_element_contents("revision_history", m_data);
+      revs = lwg::get_element_content("revision_history", m_data);
    } catch (const std::runtime_error&) {
       throw std::runtime_error{"Unable to find <revision_history> in lwg-issues.xml"};
    }
@@ -168,10 +168,9 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
 
    while (revs.find("<revision tag=") != revs.npos) {
       auto rev = lwg::get_element("revision", revs);
-      auto rv = lwg::get_attribute_of("tag", "revision", rev);
-      auto s = lwg::get_element_contents("revision", rev);
-      r += std::format("<li>{}: {}</li>\n", rv, s);
-      revs.remove_prefix(rev.size());
+      auto rv = lwg::get_attribute_of("tag", "revision", rev.outer);
+      r += std::format("<li>{}: {}</li>\n", rv, rev.inner);
+      revs.remove_prefix(rev.outer.size());
    }
    r += "</ul>\n";
 
@@ -183,7 +182,7 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
 
 auto mailing_info::get_statuses() const -> std::string_view {
    try {
-      return lwg::get_element_contents("statuses", m_data);
+      return lwg::get_element_content("statuses", m_data);
    } catch (const std::runtime_error&) {
       throw std::runtime_error{"Unable to find statuses in lwg-issues.xml"};
    }

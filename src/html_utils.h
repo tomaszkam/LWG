@@ -24,11 +24,17 @@ inline std::string strip_xml_elements(std::string xml) {
 // For example, element names are case-sensitive, attributes must be quoted,
 // and end tags are not optional. This matches the LWG issue format.
 
-// Find "<elem>...</elem>" in xml and return as string view.
-std::string_view get_element(std::string_view elem, std::string_view xml);
+struct xml_element
+{
+  std::string_view outer; // "<elem>content</elem>"
+  std::string_view inner; // just "content"
+};
 
-// As above, but only return the "..." part.
-std::string_view get_element_contents(std::string_view elem, std::string_view xml);
+// Find "<elem>...</elem>" in xml and return as two string views.
+xml_element get_element(std::string_view elem, std::string_view xml);
+
+// As above, but only return the inner part.
+std::string_view get_element_content(std::string_view elem, std::string_view xml);
 
 // Find attr="..." in xml and return the attribute's value
 std::string_view get_attribute(std::string_view attr, std::string_view xml);

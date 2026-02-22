@@ -20,7 +20,7 @@ find_element(std::string_view elem, std::string_view xml)
 
 // FIXME: This cannot handle "<p> <p>nested</p> </p>",
 // it returns up to the first "</p>" instead of the second.
-std::string_view
+xml_element
 get_element(std::string_view elem, std::string_view xml)
 {
   // N.B. we assume no whitespace in end tag, i.e. "</elem>" not "</elem >"
@@ -33,27 +33,21 @@ get_element(std::string_view elem, std::string_view xml)
     if (pos != xml.npos)
     {
       if (xml[pos - 1] == '/') // self-closing tag, e.g. "<p/>"
-        return xml.substr(0, pos + 1);
+        return { xml.substr(0, pos + 1), {} };
 
-      pos = xml.find(end_tag, pos);
-      if (pos != xml.npos)
-        return xml.substr(0, pos + end_tag.size());
+      ++pos;
+      auto pos2 = xml.find(end_tag, pos);
+      if (pos2 != xml.npos)
+        return { xml.substr(0, pos2 + end_tag.size()), xml.substr(pos, pos2 - pos) };
     }
   }
   throw std::runtime_error{"Element not found: " + std::string{elem}};
 }
 
 std::string_view
-get_element_contents(std::string_view elem, std::string_view xml)
+get_element_content(std::string_view elem, std::string_view xml)
 {
-  auto s = get_element(elem, xml);
-  if (not s.empty())
-  {
-    s.remove_prefix(s.find('>', elem.size() + 1) + 1); // <elem ...>
-    if (not s.empty())
-      s.remove_suffix(elem.size() + 3); // </elem>
-  }
-  return s;
+  return lwg::get_element(elem, xml).inner;
 }
 
 std::string_view
@@ -102,14 +96,14 @@ int main()
     "<p>para <p/>another para</p>"
     "<blockquote>quote <blockquote>nested quote</blockquote></blockquote>"
     "</xml>";
-  assert(lwg::get_element("elem", xml) == "<elem>content <x/> ...</elem>");
-  assert(lwg::get_element_contents("elem", xml) == "content <x/> ...");
-  assert(lwg::get_element("x", xml) == "<x/>");
-  assert(lwg::get_element_contents("x", xml) == "");
-  assert(lwg::get_element("elt", xml) == "<elt attr=\"foo\" attr2=\"bar\" />");
-  assert(lwg::get_element_contents("elt", xml) == "");
-  assert(lwg::get_element_contents("p", xml) == "para <p/>another para");
-  // FIXME: assert(lwg::get_element_contents("blockquote", xml) == "quote <blockquote>nested quote</blockquote>");
+  assert(lwg::get_element("elem", xml).outer == "<elem>content <x/> ...</elem>");
+  assert(lwg::get_element_content("elem", xml) == "content <x/> ...");
+  assert(lwg::get_element("x", xml).outer == "<x/>");
+  assert(lwg::get_element_content("x", xml) == "");
+  assert(lwg::get_element("elt", xml).outer == "<elt attr=\"foo\" attr2=\"bar\" />");
+  assert(lwg::get_element_content("elt", xml) == "");
+  assert(lwg::get_element_content("p", xml) == "para <p/>another para");
+  // FIXME: assert(lwg::get_element_content("blockquote", xml) == "quote <blockquote>nested quote</blockquote>");
   assert(lwg::get_attribute("attr", xml) == "foo");
   assert(lwg::get_attribute("attr3", xml) == "three");
   assert(lwg::get_attribute_of("attr3", "elt", xml) == "three");
