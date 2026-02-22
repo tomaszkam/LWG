@@ -341,11 +341,6 @@ void format_issue_as_html(lwg::issue & is,
 
          if (tag[0] == '/') { // closing tag
              tag.erase(tag.begin());
-             if (tag == "revision") {
-                s.erase(i, j-i + 1);
-                --i;
-                break;;
-             }
 
              if (tag_stack.empty()  or  tag != tag_stack.back()) {
                 fail_mismatched_tag(tag, context);
