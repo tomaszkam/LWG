@@ -30,7 +30,7 @@ src/*.o: clean
 .DEFAULT_GOAL: all
 endif
 
-all: pgms
+all: check pgms
 
 pgms: $(PGMS)
 
