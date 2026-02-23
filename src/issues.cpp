@@ -190,40 +190,34 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
 //    std::cout << is.doc_prefix << '\n';
    }
 
-   std::string::size_type l = 0;
-
    // Get issue sections
-   std::string_view match = "<section>";
-   auto k = tx.find(match, l);
-   if (k == std::string::npos) {
-      throw bad_issue_file{filename, "Unable to find issue section"};
-   }
-   k += match.size();
-   l = tx.find("</section>", k);
-   while (k < l) {
-      k = tx.find('"', k);
-      if (k >= l) {
-          break;
+   std::string_view sections = get_elem_content("section");
+   while (auto sref = lwg::get_element("sref", sections))
+   {
+      if (auto attr = lwg::get_attribute("ref", sref->outer))
+      {
+         if (attr->starts_with('[') and attr->ends_with(']'))
+         {
+            attr->remove_prefix(1);
+            attr->remove_suffix(1);
+         }
+         else
+            throw bad_issue_file{filename, "Invalid section name in <sref>"};
+
+         section_tag tag;
+         tag.prefix = is.doc_prefix;
+         tag.name = *attr;
+         is.tags.emplace_back(tag);
+         if (section_db.find(is.tags.back()) == section_db.end()) {
+             section_num num{};
+             num.prefix = tag.prefix;
+             num.num.push_back(99);
+             section_db[is.tags.back()] = num;
+         }
       }
-      auto k2 = tx.find('"', k+1);
-      if (k2 >= l) {
-         throw bad_issue_file{filename, "Unable to find issue section"};
-      }
-      ++k;
-      section_tag tag;
-      tag.prefix = is.doc_prefix;
-      tag.name = tx.substr(k+1, k2 - k - 2);
-//std::cout << "lookup tag=\"" << tag.prefix << "\", \"" << tag.name << "\"\n";
-      is.tags.emplace_back(tag);
-      if (section_db.find(is.tags.back()) == section_db.end()) {
-          section_num num{};
- //         num.num.push_back(100 + 'X' - 'A');
-          num.prefix = tag.prefix;
-          num.num.push_back(99);
-          section_db[is.tags.back()] = num;
-      }
-      k = k2;
-      ++k;
+      else
+         throw bad_issue_file{filename, "Missing ref attribute in <sref>"};
+      sections.remove_prefix(sref->outer.data() - sections.data() + sref->outer.size());
    }
 
    if (is.tags.empty()) {
@@ -252,23 +246,14 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    is.mod_date = report_date_file_last_modified(filename, meta);
 
    // Get priority - this element is optional
-   match = "<priority>";
-   k = tx.find(match, l);
-   if (k != std::string::npos) {
-      k += match.size();
-      l = tx.find("</priority>", k);
-      if (l == std::string::npos) {
-         throw bad_issue_file{filename, "Corrupt 'priority' element: no closing tag"};
-      }
-      is.priority = lwg::stoi(tx.substr(k, l-k));
-   }
+   if (auto o = lwg::get_element_content("priority", tx))
+      is.priority = lwg::stoi(std::string(*o));
 
    // Trim text to <discussion>
-   k = tx.find("<discussion>", l);
-   if (k == std::string::npos) {
+   if (auto k = tx.find("<discussion>"); k != tx.npos)
+      tx.replace(0, k, "<issue>");
+   else
       throw bad_issue_file{filename, "Unable to find issue discussion"};
-   }
-   tx.replace(0, k, "<issue>");
 
    // Find out if issue has a proposed resolution
    if (is_active(is.stat)  or  "Pending WP" == is.stat) {
