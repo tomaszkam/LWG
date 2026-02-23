@@ -125,11 +125,10 @@ auto mailing_info::get_intro(std::string_view doc) const -> std::string_view {
 // turned into an HTML <a href="mailto:..."> link.
 auto mailing_info::get_maintainer() const -> std::string {
    std::string_view r;
-   try {
-      r = lwg::get_attribute("maintainer", m_data);
-   } catch (const std::runtime_error&) {
+   if (auto o = lwg::get_attribute("maintainer", m_data))
+      r = *o;
+   else
       throw std::runtime_error{"Unable to find <maintainer> in lwg-issues.xml"};
-   }
 
    auto m = r.find("&lt;");
    if (m == r.npos) {
@@ -156,21 +155,23 @@ auto mailing_info::get_revision() const -> std::string_view {
 auto mailing_info::get_revisions(std::span<const issue> issues, std::string const & diff_report) const -> std::string {
 
    std::string_view revs;
-   try {
-      revs = lwg::get_element_content("revision_history", m_data);
-   } catch (const std::runtime_error&) {
+   if (auto o = lwg::get_element_content("revision_history", m_data))
+      revs = *o;
+   else
       throw std::runtime_error{"Unable to find <revision_history> in lwg-issues.xml"};
-   }
 
    // We should date and *timestamp* this reference, as we expect to generate several documents per day
    std::string r = std::format("<ul>\n<li>{}: {} {}{}</li>\n",
        get_revision(), get_date(), get_title(), diff_report);
 
    while (revs.find("<revision tag=") != revs.npos) {
-      auto rev = lwg::get_element("revision", revs);
-      auto rv = lwg::get_attribute_of("tag", "revision", rev.outer);
-      r += std::format("<li>{}: {}</li>\n", rv, rev.inner);
-      revs.remove_prefix(rev.outer.size());
+      if (auto rev = lwg::get_element("revision", revs)) {
+         auto rv = *lwg::get_attribute_of("tag", "revision", rev->outer);
+         r += std::format("<li>{}: {}</li>\n", rv, rev->inner);
+         revs.remove_prefix(rev->outer.size());
+      }
+      else
+         throw std::runtime_error{"Invalid <revision> element in <revisions>"};
    }
    r += "</ul>\n";
 
@@ -181,11 +182,9 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
 
 
 auto mailing_info::get_statuses() const -> std::string_view {
-   try {
-      return lwg::get_element_content("statuses", m_data);
-   } catch (const std::runtime_error&) {
-      throw std::runtime_error{"Unable to find statuses in lwg-issues.xml"};
-   }
+   if (auto o = lwg::get_element_content("statuses", m_data))
+      return *o;
+   throw std::runtime_error{"Unable to find statuses in lwg-issues.xml"};
 }
 
 auto mailing_info::get_date() const -> std::string_view {
@@ -197,11 +196,9 @@ auto mailing_info::get_title() const -> std::string_view {
 }
 
 auto mailing_info::get_attribute(std::string_view attribute_name) const -> std::string_view {
-   try {
-      return lwg::get_attribute(attribute_name, m_data);
-   } catch (const std::runtime_error&) {
-      throw std::runtime_error{std::format("Unable to find {} in lwg-issues.xml", attribute_name)};
-   }
+   if (auto o = lwg::get_attribute(attribute_name, m_data))
+      return *o;
+   throw std::runtime_error{std::format("Unable to find {} in lwg-issues.xml", attribute_name)};
 }
 
 } // close namespace lwg

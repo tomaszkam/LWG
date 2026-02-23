@@ -1,5 +1,6 @@
 #include <string>
 #include <string_view>
+#include <optional>
 
 namespace lwg
 {
@@ -31,17 +32,17 @@ struct xml_element
 };
 
 // Find "<elem>...</elem>" in xml and return as two string views.
-xml_element get_element(std::string_view elem, std::string_view xml);
+std::optional<xml_element> get_element(std::string_view elem, std::string_view xml);
 
 // As above, but only return the inner part.
-std::string_view get_element_content(std::string_view elem, std::string_view xml);
+std::optional<std::string_view> get_element_content(std::string_view elem, std::string_view xml);
 
 // Find attr="..." in xml and return the attribute's value
-std::string_view get_attribute(std::string_view attr, std::string_view xml);
+std::optional<std::string_view> get_attribute(std::string_view attr, std::string_view xml);
 
 // Find <elem attr="..."> in xml and return the attribute's value
-std::string_view get_attribute_of(std::string_view attr, std::string_view elem,
-                                  std::string_view xml);
+std::optional<std::string_view> get_attribute_of(std::string_view attr, std::string_view elem,
+                                                 std::string_view xml);
 
 struct issue;
 

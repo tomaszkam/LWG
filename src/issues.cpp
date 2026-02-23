@@ -155,17 +155,30 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
 
    issue is;
 
+   auto get_or_throw = [&filename](const auto& opt, std::string_view what) {
+      return opt ? *opt : throw bad_issue_file(filename, "Unable to find issue " + std::string(what));
+   };
+
+   // Get value from "<issue attr='value'>"
+   auto get_attr = [&](std::string_view attr) {
+      return get_or_throw(lwg::get_attribute_of(attr, "issue", tx), attr);
+   };
+   // Get content from "<elem>content</elem>"
+   auto get_elem_content = [&](std::string_view elem) {
+      return get_or_throw(lwg::get_element_content(elem, tx), elem);
+   };
+
    // Get issue number
-   std::string_view num = lwg::get_attribute_of("num", "issue", tx);
+   std::string_view num = get_attr("num");
    if (!filename.ends_with(std::format("issue{:0>4}.xml", num)))
      std::cerr << "warning: issue number " << num << " in " << filename << " does not match issue number\n";
    is.num = lwg::stoi(std::string(num));
 
    // Get issue status
-   is.stat = lwg::get_attribute_of("status", "issue", tx);
+   is.stat = get_attr("status");
 
    // Get issue title
-   is.title = lwg::get_element_content("title", tx);
+   is.title = get_elem_content("title");
 
    // Extract doc_prefix from title
    if (is.title[0] == '['
@@ -218,10 +231,10 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
    }
 
    // Get submitter
-   is.submitter = lwg::get_element_content("submitter", tx);
+   is.submitter = get_elem_content("submitter");
 
    // Get date
-   auto datestr = lwg::get_element_content("date", tx);
+   auto datestr = get_elem_content("date");
 
    try {
 #ifdef __cpp_lib_sstream_from_string_view
@@ -259,23 +272,16 @@ auto lwg::parse_issue_from_file(std::string tx, std::string const & filename,
 
    // Find out if issue has a proposed resolution
    if (is_active(is.stat)  or  "Pending WP" == is.stat) {
-      try {
-         auto resolution = lwg::get_element_content("resolution", tx);
-         if (resolution.length() < 15) {
-            // Filter small amounts of whitespace between tags, with no actual resolution
-            resolution = {};
-         }
-         is.has_resolution = !resolution.empty();
+      auto resolution = lwg::get_element_content("resolution", tx);
+      // Ignore small amounts of whitespace between tags, with no actual resolution
+      is.has_resolution = resolution.has_value() && resolution->length() >= 15;
 
-         // The is.text string already contains the <resolution> element,
-         // but is.resolution stores another copy of it.
-         // That was used to prepare a new report for the editor containing
-         // only the issues approved at a meeting.
-         // We don't currently do this.
-         // is.resolution = resolution;
-      } catch (const std::runtime_error&) {
-         is.has_resolution = false;
-      }
+      // The is.text string already contains the <resolution> element,
+      // but is.resolution stores another copy of it.
+      // That was used to prepare a new report for the editor containing
+      // only the issues approved at a meeting.
+      // We don't currently do this.
+      // is.resolution = *resolution;
    }
    else {
       is.has_resolution = true;
