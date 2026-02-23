@@ -261,16 +261,10 @@ void format_issue_as_html(lwg::issue & is,
    };
 
    // Return the content of a quoted attribute, e.g. ref="[stable.name]"
-   auto get_attribute_value = [&fail](std::string elem_name, std::string_view data, const Context& ctx) {
-      auto k = data.find('"');
-      if (k != data.npos) {
-         ++k;
-         auto l = data.find('"', k);
-         if (l != data.npos) {
-            return data.substr(k, l - k);
-         }
-      }
-      fail("Missing '\"' in <" + elem_name + '>', ctx);
+   auto get_attribute_value = [&fail](std::string_view attr, std::string_view elem, std::string_view data, const Context& ctx) {
+      if (auto o = lwg::get_attribute_of(attr, elem, data))
+         return *o;
+      fail(std::format("No {} attribute in <{}>", attr, elem), ctx);
 
       // Can't put [[noreturn]] on a lambda until C++23,
       // so we get warnings about a missing return here.
@@ -367,7 +361,7 @@ void format_issue_as_html(lwg::issue & is,
             if (tag == "sref") {
                lwg::section_tag tag;
                tag.prefix = is.doc_prefix;
-               auto section_name = get_attribute_value("sref", attrs, context);
+               auto section_name = get_attribute_value("ref", "sref", attrs, context);
                tag.name = section_name.substr(1, section_name.size() - 2);
 
                // heuristic: if the name is not found using the doc_prefix, try
@@ -394,7 +388,7 @@ void format_issue_as_html(lwg::issue & is,
 
             // format issue references
             else if (tag == "iref") {
-               std::string r{get_attribute_value("iref", attrs, context)};
+               std::string r{get_attribute_value("ref", "iref", attrs, context)};
                int num;
                {
                   std::istringstream temp{r};
@@ -427,7 +421,7 @@ void format_issue_as_html(lwg::issue & is,
                continue;
             }
             else if (tag == "paper") {
-               std::string paper_number{get_attribute_value("paper", attrs, context)};
+               std::string paper_number{get_attribute_value("num", "paper", attrs, context)};
                static const std::regex acceptable_numbers(R"(N\d+|[DP]\d+R\d+|[DP]\d+)", std::regex::icase);
 
                if (!std::regex_match(paper_number, acceptable_numbers)) {
