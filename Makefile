@@ -44,15 +44,17 @@ bin/list_issues: src/issues.o src/status.o src/sections.o src/list_issues.o src/
 
 bin/set_status: src/set_status.o src/status.o
 
+bin/self_test_%: CPPFLAGS += -DSELF_TEST
+bin/self_test_%: CXXFLAGS += -O0 -MF src/self_test_$*.d
 bin/self_test_%: src/%.cpp
-	$(CXX) $(CPPFLAGS) -DSELF_TEST $(CXXFLAGS) -O0 $(LDFLAGS) $< -o $@
+	$(LINK.C) $< $(LDLIBS) -o $@
 
 check: bin/self_test_html_utils
-	./$<
+	@x=0; for test in $^; do ./$$test || x=$$? ; done; exit $$x
 .PHONY: check
 
 $(PGMS):
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(LINK.C) $^ $(LDLIBS) -o $@
 
 clean:
 	rm -f $(PGMS) src/*.o src/*.d bin/self_test_*
