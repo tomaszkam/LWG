@@ -37,23 +37,27 @@ auto parse_date(std::istream & temp) -> std::chrono::year_month_day {
       return date;
    throw std::runtime_error{"date format error"};
 #else
-   int d;
-   temp >> d;
-   if (temp.fail()) {
-      throw std::runtime_error{"date format error"};
-   }
-
-   std::string month;
-   temp >> month;
-
-   std::map<std::string_view, int> months{
-      {"Jan", 1}, {"Feb", 2}, {"Mar", 3}, {"Apr", 4}, {"May", 5}, {"Jun", 6},
-      {"Jul", 7}, {"Aug", 8}, {"Sep", 9}, {"Oct",10}, {"Nov",11}, {"Dec",12}
+   using month_idx = std::pair<std::string_view,int>;
+   constexpr month_idx months[] = {
+      {"Apr", 4},{"Aug", 8},{"Dec",12},{"Feb", 2},{"Jan", 1},{"Jul", 7},
+      {"Jun", 6},{"Mar", 3},{"May", 5},{"Nov",11},{"Oct",10},{"Sep", 9}
    };
 
-   int y{ 0 };
-   temp >> y;
-   return std::chrono::year{y}/months[month]/d;
+   int d;
+   std::string month;
+   int y;
+   if (temp >> d >> month >> y)
+   {
+      auto it = std::ranges::lower_bound(months, month, {}, &month_idx::first);
+
+      if (it != std::end(months) and it->first == month)
+      {
+         int m = it->second;
+         if (auto ymd = std::chrono::year{y}/m/d; ymd.ok())
+            return ymd;
+      }
+   }
+   throw std::runtime_error{"date format error"};
 #endif
 }
 
