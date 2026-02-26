@@ -168,6 +168,7 @@ auto mailing_info::get_revisions(std::span<const issue> issues, std::string cons
       if (auto rev = lwg::get_element("revision", revs)) {
          auto rv = *lwg::get_attribute_of("tag", "revision", rev->outer);
          r += std::format("<li>{}: {}</li>\n", rv, rev->inner);
+         revs.remove_prefix(rev->outer.data() - revs.data()); // remove ws
          revs.remove_prefix(rev->outer.size());
       }
       else
