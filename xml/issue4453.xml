@@ -94,7 +94,7 @@ as `volatile` atomics may be ill-formed.</p>
 
 <resolution>
 <p>
-This wording is relative to <paper num="N5014"/>.
+This wording is relative to <paper num="N5032"/>.
 </p>
 
 <ol>
