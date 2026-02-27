@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8' standalone='no'?>
 <!DOCTYPE issue SYSTEM "lwg-issue.dtd">
 
-<issue num="4527" status="New">
+<issue num="4527" status="Tentatively Ready">
 <title><code>await_transform</code> needs to use <code>as_awaitable</code></title>
 <section><sref ref="[task.promise]"/></section>
 <submitter>Dietmar Kühl</submitter>
@@ -14,6 +14,11 @@ In the <code>await_transform</code> overload for <code>change_coroutine_schedule
 </p>
 <p>
 Note that <paper num="P3941"/> recommends removing <code>change_coroutine_scheduler</code> and the corresponding overload of <code>await_transform</code> entirely.
+</p>
+
+<note>2026-02-27; Reflector poll.</note>
+<p>
+Set status to Tentatively Ready after 7 votes in favour during reflector poll.
 </p>
 </discussion>
 
