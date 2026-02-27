@@ -109,7 +109,7 @@ static constexpr size_t required_alignment;
 The alignment required for an object to be referenced by an atomic reference,
 which is at least `alignof(T)`.
 <ins>
-For any type <tt>U</tt> similar to <tt>T</tt>, such that atomic_ref&lt;U&gt; is the value of
+For any type <tt>U</tt> similar to <tt>T</tt>, the value of
 <tt>required_alignment</tt> is the same as
 <tt>atomic_ref&lt;remove_cv_t&lt;U&gt;&gt;::required_alignment</tt>.
 </ins>
