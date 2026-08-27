@@ -6,7 +6,7 @@
 <section><sref ref="[numeric.ops.midpoint]"/></section>
 <submitter>Jan Schultke</submitter>
 <date>16 Aug 2026</date>
-<priority>99</priority>
+<priority>3</priority>
 
 <discussion>
 <p>
@@ -24,6 +24,14 @@ the result is rounded towards `a`.
 Not only is there no description of the result, there is also no description of error handling 
 because the blanket wording in <sref ref="[library.c]"/> does not apply to <tt>&lt;numeric&gt;</tt>, 
 only to <tt>&lt;cmath&gt;</tt> functions.
+</p>
+
+<note>2026-08-27; Reflector poll.</note>
+<p>
+Set priority to P3 after reflector poll.
+</p>
+<p>
+"we need a return before lerp and a semicolon after the call."
 </p>
 </discussion>
 
