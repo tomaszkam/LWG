@@ -8,7 +8,7 @@
 </section>
 <submitter>S. B. Tam</submitter>
 <date>18 May 2026</date>
-<priority>99</priority>
+<priority>2</priority>
 
 <discussion>
 <p>
@@ -16,6 +16,15 @@ After <a href="https://cplusplus.github.io/CWG/issues/3111.html">CWG 3111</a>, `
 `reflect_constant_array` and `reflect_function` for arrays and functions respectively. But since 
 it inspects `type_of(r)` and not `remove_reference(type_of(r))`, variables of reference types will 
 still decay to pointers. It's unclear to me whether this is intended.
+</p>
+
+<note>2026-08-27; Reflector poll.</note>
+<p>
+Set priority to 2 after reflector poll.
+</p>
+<p>
+May not be possible to avoid decay for array/function references in constant_of,
+since copies of non-constant arrays can't be constants.
 </p>
 </discussion>
 
