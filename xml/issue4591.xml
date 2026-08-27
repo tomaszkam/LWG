@@ -6,7 +6,7 @@
 <section><sref ref="[meta.reflection.scope]"/></section>
 <submitter>S. B. Tam</submitter>
 <date>31 May 2026</date>
-<priority>99</priority>
+<priority>2</priority>
 
 <discussion>
 <p>
@@ -69,6 +69,14 @@ is the point at which the invocation of `current_function` lexically appears.
 </superseded>
 
 <note>2026-06-16; Ville Voutilainen provides improved wording</note>
+
+<note>2026-08-27; Reflector poll.</note>
+<p>
+Set priority to 2 after reflector poll.
+</p>
+<p>
+"we should say this in words, similar to current_namespace."
+</p>
 </discussion>
 
 <resolution>
