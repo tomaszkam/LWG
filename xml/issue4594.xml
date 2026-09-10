@@ -53,8 +53,8 @@ Though, maybe better:
 Set priority to 3 after reflector poll.
 </p>
 <p>
-Possible alternative: perform this check in define_aggregate instead of data_member_spec.
-Also, define_aggregate is missing an abstractness check.
+Possible alternative: perform this check in `define_aggregate` instead of `data_member_spec`.
+Also, `define_aggregate` is missing an abstractness check.
 </p>
 </discussion>
 
