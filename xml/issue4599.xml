@@ -46,7 +46,7 @@ Many voted NAD, arguing the alias template serves a purpose (prevents lookup pro
 in nested namespaces and communicates that std::atomic need not be visible from &lt;stdatomic.h&gt;).
 </p>
 <p>
-Possible improvment would be to use:
+Possible improvement would be to use:
 <pre>
 template&lt;class T&gt;
   using <i>std-atomic</i> = <i>see below</i>;
