@@ -75,7 +75,7 @@ is the point at which the invocation of `current_function` lexically appears.
 Set priority to 2 after reflector poll.
 </p>
 <p>
-"we should say this in words, similar to current_namespace."
+"we should say this in words, similar to `current_namespace`."
 </p>
 </discussion>
 
