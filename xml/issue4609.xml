@@ -22,7 +22,7 @@ specializations with different allocator types (e.g. `std::pmr::string`).
 Set priority to 3 after reflector poll.
 </p>
 <p>
-The deduction guide might be better taking basic_string_view instead of basic_string,
+The deduction guide might be better taking `basic_string_view` instead of `basic_string`,
 matching the constructor parameter type. Or provide non-template guide taking `string_view`.
 </p>
 </discussion>
