@@ -31,7 +31,10 @@ only to <tt>&lt;cmath&gt;</tt> functions.
 Set priority to P3 after reflector poll.
 </p>
 <p>
-"we need a return before lerp and a semicolon after the call."
+"we need a return before `lerp` and a semicolon after the call."
+</p>
+<p>
+"`lerp` handles such corner cases, just call `lerp` to get it right."
 </p>
 </discussion>
 
