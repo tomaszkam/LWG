@@ -25,6 +25,7 @@ to point to elements of different array subobjects in the same complete object, 
 <p>
 Set status to Tentatively Ready after 6 votes in favour during reflector poll.
 </p>
+<p>This change has no practical impact, because this was always the real precondition anyway.</p>
 </discussion>
 
 <resolution>
